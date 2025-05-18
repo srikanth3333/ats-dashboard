@@ -345,7 +345,6 @@ function Page() {
     );
   }
 
-  console.log(data);
 
   return (
     <div>
