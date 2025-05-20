@@ -484,12 +484,12 @@ export default function InterviewsPage() {
                   {selectedInterviewData.name || "Unknown"}
                 </p>
               </div>
-              <div>
+              {/* <div>
                 <h3 className="text-sm font-medium">Position</h3>
                 <p className="text-sm">
                   {selectedInterviewData.job_title || "Unknown"}
                 </p>
-              </div>
+              </div> */}
               <div>
                 <h3 className="text-sm font-medium">Interviewer</h3>
                 <p className="text-sm">

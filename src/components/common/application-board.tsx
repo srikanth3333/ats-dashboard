@@ -175,11 +175,11 @@ export function ApplicationBoard({
       {statuses.map((status) => (
         <div
           key={status.key}
-          className="flex flex-col h-full"
+          className="flex flex-col h-full "
           onDragOver={handleDragOver}
           onDrop={(e) => handleDrop(e, status.key)}
         >
-          <Card className={`border-t-4 ${status.color} h-full`}>
+          <Card className={`border-t-4 ${status.color} h-full `}>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium">
                 {status.label} (

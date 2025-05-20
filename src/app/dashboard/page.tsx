@@ -1,7 +1,13 @@
 "use client";
 import AnalysisBars from "@/components/common/AnalysisBars";
 import CountsCard from "@/components/common/CountsCard";
+import {
+  CandidateDetail,
+  ClientDetail,
+  JobPostingDetail,
+} from "@/components/common/features";
 import { SkeletonCard } from "@/components/common/Loader";
+import { SheetModal } from "@/components/common/SheetModal";
 import { Button } from "@/components/ui/button";
 import { useCountCard } from "@/hooks/use-count-card";
 import { useState } from "react";
@@ -11,14 +17,17 @@ function Page() {
   const { user } = useUser();
   const [filters, setFilters] = useState<any>({});
   const checkUser = user?.userProfile?.designation === "company" ? false : true;
-  console.log(checkUser);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [selectedItem, setSelectedItem] = useState<
+    { tableName?: string } | Record<string, any>
+  >({});
   const countCards = [
     {
       title: "Clients",
       color: "text-gray-700",
       tableName: "clients",
       profileId: user?.user?.id,
-      assignId: user?.userProfile?.id,
+      assignId: user?.company?.id,
       applyUserIdFilter: true,
       filters: filters,
     },
@@ -95,7 +104,33 @@ function Page() {
     });
   };
 
+  const onOpenChange = () => {
+    setIsModalOpen(!isModalOpen);
+  };
+
   const { dashboardData, loading, error } = useCountCard(countCards, filters);
+
+  const renderPage = (name: string): React.ReactNode => {
+    switch (name) {
+      case "clients":
+        return (
+          <ClientDetail
+            selectedItem={{
+              applyCurrentUser: (selectedItem as Record<string, any>)
+                ?.applyCurrentUser,
+              assignId: (selectedItem as Record<string, any>)?.assignId,
+              profileId: (selectedItem as Record<string, any>)?.profileId,
+            }}
+          />
+        );
+      case "candidates":
+        return <CandidateDetail selectedItem={selectedItem} />;
+      case "job_posting":
+        return <JobPostingDetail selectedItem={selectedItem} />;
+      default:
+        return null;
+    }
+  };
 
   if (loading) {
     return (
@@ -121,6 +156,11 @@ function Page() {
     );
   }
 
+  const onclick = (val: any) => {
+    setSelectedItem(val);
+    onOpenChange();
+  };
+
   return (
     <div>
       <div>
@@ -131,9 +171,22 @@ function Page() {
           submitButton={false}
         /> */}
       </div>
-      <CountsCard title="" data={dashboardData} />
+      <CountsCard title="" onClick={onclick} data={dashboardData} />
       <div>
         <AnalysisBars title="Analysis" />
+      </div>
+
+      <div>
+        <SheetModal
+          onOpenChange={onOpenChange}
+          isSheetOpen={isModalOpen}
+          title="Details"
+          className="w-full lg:max-w-3xl"
+        >
+          <div className="px-6 bg-gray-100 h-full overflow-y-scroll pb-10">
+            {renderPage(selectedItem?.tableName)}
+          </div>
+        </SheetModal>
       </div>
     </div>
   );

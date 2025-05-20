@@ -162,8 +162,8 @@ export function InterviewCalendar({
                         interview.type === "video"
                           ? "bg-blue-100 border-blue-300 dark:bg-blue-900/30 dark:border-blue-700"
                           : interview.type === "phone"
-                          ? "bg-green-100 border-green-300 dark:bg-green-900/30 dark:border-green-700"
-                          : "bg-amber-100 border-amber-300 dark:bg-amber-900/30 dark:border-amber-700";
+                            ? "bg-green-100 border-green-300 dark:bg-green-900/30 dark:border-green-700"
+                            : "bg-amber-100 border-amber-300 dark:bg-amber-900/30 dark:border-amber-700";
 
                       return (
                         <div
@@ -175,7 +175,7 @@ export function InterviewCalendar({
                           <div className="font-medium truncate">
                             {interview.candidateName}
                           </div>
-                          <div className="truncate">{interview.jobTitle}</div>
+                          {/* <div className="truncate">{interview.jobTitle}</div> */}
                           <div className="truncate text-muted-foreground">
                             {formatInIndianTime(
                               interview.scheduledAt,

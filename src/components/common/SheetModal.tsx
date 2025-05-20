@@ -25,7 +25,7 @@ export function SheetModal({
       defaultOpen={isSheetOpen}
     >
       <SheetContent className={className}>
-        <SheetHeader>
+        <SheetHeader className="h-10 items-center">
           <SheetTitle>{title}</SheetTitle>
         </SheetHeader>
         {children}

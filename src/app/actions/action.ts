@@ -41,10 +41,10 @@ export async function createRecord<T extends object>(
   }
 }
 
-export async function createRecordWithoutUser<T extends object>(
+export async function createRecordWithoutUser(
   tableName: string,
-  data: TableData<T>
-): Promise<CrudResponse<T>> {
+  data: TableData<any>
+): Promise<CrudResponse<any>> {
   try {
     const supabase = await createClient();
     const { data: createdData, error } = await supabase
@@ -58,7 +58,7 @@ export async function createRecordWithoutUser<T extends object>(
     }
 
     return {
-      data: (createdData as T) || null,
+      data: createdData || null,
       success: true,
       error,
     };
@@ -182,18 +182,17 @@ export async function fetchTableDataWithForeignKey<T>({
   profileId,
   assignId,
   applyCurrentUser,
+  includeNestedRelations = false, // New parameter to control nested relations
 }: FetchTableDataParams): Promise<PaginatedResponse<T>> {
   try {
     const supabase = await createClient();
     const offset = (page - 1) * pageSize;
-
-    // Get user ID if applying user_id filter
     let userId: string | undefined;
     if (applyUserIdFilter) {
       userId = profileId;
     }
-
-    const selectFields = [
+    let selectFields;
+    selectFields = [
       "*",
       ...Object.entries(foreignKeys).map(
         ([fk, fields]) => `${fk}:${fk}(${fields.join(",")})`
@@ -217,7 +216,6 @@ export async function fetchTableDataWithForeignKey<T>({
     }
 
     if (applyUserIdFilter && tableName === "candidates") {
-      // query = query.or(`user_id.eq.${userId},company_id.eq.${assignId},`);
       query = query.filter("company_id", "eq", assignId);
       if (applyCurrentUser) {
         query = query.filter("user_id", "eq", userId);
@@ -258,6 +256,7 @@ export async function fetchTableDataWithForeignKey<T>({
     query = query
       .order(columnToSort, { ascending: sortDirection === "asc" })
       .range(offset, offset + pageSize - 1);
+
     // Execute query
     const { data, error, count } = await query;
     if (error) {
@@ -479,7 +478,12 @@ export async function getListDataById<T>(
     };
   } catch (err) {
     console.error("Unexpected error:", err);
-    throw new Error("An unexpected error occurred while fetching clients");
+    return {
+      success: false,
+      data: null,
+      error:
+        err instanceof Error ? err.message : "An unexpected error occurred",
+    };
   }
 }
 

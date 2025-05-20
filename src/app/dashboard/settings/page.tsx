@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { getListDataById, updateRecord } from "@/app/actions/action";
+import { updateRecord } from "@/app/actions/action";
 import { useUser } from "@/app/context/UserContext";
 import DataTable from "@/components/common/data-table";
 import DynamicFilterForm from "@/components/common/DynamicFilterForm";
@@ -11,18 +11,21 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCardList } from "@/hooks/use-card-list";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { toast } from "sonner";
 
 function Page() {
+  const { user } = useUser();
   const [isOpen, setIsOpen] = useState(false);
   const [defaultValues, setDefaultValues] = useState<any>({});
-  const [defaultValuesCompany, setDefaultValuesCompany] = useState<any>({});
-  const [isLoading, setIsLoading] = useState(true);
+  const [defaultValuesCompany, setDefaultValuesCompany] = useState<any>(
+    user?.company
+  );
   const [currentTab, setCurrentTab] = useState("account");
-  const { user } = useUser();
   const [searchTerm, setSearchTerm] = useState("");
   const userProfile = user?.userProfile;
+  const router = useRouter();
 
   const {
     pageSize,
@@ -57,47 +60,6 @@ function Page() {
   const onOpenChange = () => {
     setIsOpen(!isOpen);
   };
-
-  const getDefaultValues = async () => {
-    setIsLoading(true);
-    try {
-      const result = await getListDataById(
-        "user_profile",
-        "*",
-        userProfile?.id
-      );
-      if (result?.success) {
-        setDefaultValues(result?.data || {});
-      } else {
-        toast.error("Failed to fetch default values");
-      }
-    } catch (error) {
-      toast.error("An error occurred while fetching default values");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const getDefaultValuesCompany = async () => {
-    setIsLoading(true);
-    try {
-      const result = await getListDataById("company", "*", user?.company?.id);
-      if (result?.success) {
-        setDefaultValuesCompany(result?.data || {});
-      } else {
-        toast.error("Failed to fetch default values");
-      }
-    } catch (error) {
-      toast.error("An error occurred while fetching default values");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    getDefaultValues();
-    getDefaultValuesCompany();
-  }, []);
 
   const formInputs = () => [
     {
@@ -143,14 +105,16 @@ function Page() {
     },
   ];
 
+  const valuesData = data?.find((item: any) => item.id === userProfile?.id);
   const createInitialValues = () => ({
-    f_name: defaultValues?.f_name || "",
-    l_name: defaultValues?.l_name || "",
-    mobile_no: defaultValues?.mobile_no || "",
-    job_role: defaultValues?.job_role || "",
-    email_id: defaultValues?.email_id || "",
+    f_name: valuesData?.f_name || "",
+    l_name: valuesData?.l_name || "",
+    mobile_no: valuesData?.mobile_no || "",
+    job_role: valuesData?.job_role || "",
+    email_id: valuesData?.email_id || "",
   });
 
+  console.log(valuesData);
   const createInitialValuesCompany = () => ({
     org_name: defaultValuesCompany?.org_name || "",
     org_linkedin_profile: defaultValuesCompany?.org_linkedin_profile || "",
@@ -165,6 +129,7 @@ function Page() {
       name: "org_name",
       label: "Organization Name",
       required: false,
+      disabled: true,
       colSpan: "col-span-8",
       placeholder: "Organization Name",
     },
@@ -173,6 +138,7 @@ function Page() {
       name: "country",
       label: "Country",
       required: false,
+      disabled: true,
       colSpan: "col-span-5",
       placeholder: "Country",
     },
@@ -181,6 +147,7 @@ function Page() {
       name: "city",
       label: "City",
       required: false,
+      disabled: true,
       colSpan: "col-span-3",
       placeholder: "City",
     },
@@ -189,6 +156,7 @@ function Page() {
       name: "org_linkedin_profile",
       label: "Organization Linkedin Profile",
       required: false,
+      disabled: true,
       colSpan: "col-span-8",
       placeholder: "Organization Linkedin Profile",
     },
@@ -197,6 +165,7 @@ function Page() {
       name: "org_website_link",
       label: "Organization Website Link",
       required: false,
+      disabled: true,
       colSpan: "col-span-8",
       placeholder: "Organization Website Link",
     },
@@ -249,7 +218,8 @@ function Page() {
         values
       );
       if (result?.success) {
-        getDefaultValues();
+        loadData(1);
+        window.location.reload();
         toast("Profile updated successfully!");
       } else {
         toast(result?.error?.message || "Failed to update profile");
@@ -272,7 +242,6 @@ function Page() {
     try {
       const result = await updateRecord("company", user?.company?.id, values);
       if (result?.success) {
-        getDefaultValuesCompany();
         toast("Profile updated successfully!");
       } else {
         toast(result?.error?.message || "Failed to update profile");
@@ -301,7 +270,7 @@ function Page() {
     setSearchTerm(values.name || "");
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div>
         <SkeletonCard grids={1} width="w-full" />

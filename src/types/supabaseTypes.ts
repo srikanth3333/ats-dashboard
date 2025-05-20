@@ -35,4 +35,5 @@ export interface FetchTableDataParams {
   profileId?: string;
   assignId?: string;
   applyCurrentUser?: boolean;
+  includeNestedRelations?: boolean;
 }

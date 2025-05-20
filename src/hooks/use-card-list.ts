@@ -11,7 +11,8 @@ export const useCardList = (
   applyUserIdFilter?: boolean,
   profileId?: string,
   assignId?: string,
-  applyCurrentUser?: boolean
+  applyCurrentUser?: boolean,
+  includeNestedRelations?: boolean
 ) => {
   const router = useRouter();
   const [data, setData] = useState<any[]>([]);
@@ -40,6 +41,7 @@ export const useCardList = (
         profileId,
         assignId,
         applyCurrentUser,
+        includeNestedRelations,
       });
 
       setData(response.data);

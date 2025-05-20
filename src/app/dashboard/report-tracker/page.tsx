@@ -4,7 +4,9 @@ import CandidateInterviewGrid from "@/components/common/CandidateCard";
 import CountsCard from "@/components/common/CountsCard";
 import DynamicFilterForm from "@/components/common/DynamicFilterForm";
 import EmptyView from "@/components/common/EmptyView";
+import { JobPostingDetail } from "@/components/common/features";
 import { SkeletonCard } from "@/components/common/Loader";
+import { SheetModal } from "@/components/common/SheetModal";
 import { Button } from "@/components/ui/button";
 import { useCardList } from "@/hooks/use-card-list";
 import { useCountCard } from "@/hooks/use-count-card";
@@ -14,6 +16,10 @@ import { useState } from "react";
 function Page() {
   const [filters, setFilters] = useState<Record<string, any>>({});
   const [searchTerm, setSearchTerm] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [selectedItem, setSelectedItem] = useState<
+    { tableName?: string } | Record<string, any>
+  >({});
   const { user } = useUser();
   const countCards = [
     {
@@ -72,6 +78,7 @@ function Page() {
     "id",
     listFilters
   );
+
   const { data, loading, error, totalCount, currentPage, setCurrentPage } =
     useCardList(
       "job_posting",
@@ -134,6 +141,15 @@ function Page() {
     setFilters(newFilters);
   };
 
+  const onOpenChange = () => {
+    setIsModalOpen(!isModalOpen);
+  };
+
+  const onclick = (val: any) => {
+    setSelectedItem(val);
+    onOpenChange();
+  };
+
   if (loading || countsLoading) {
     return (
       <div>
@@ -157,10 +173,13 @@ function Page() {
       </div>
     );
   }
-
   return (
     <div>
-      <CountsCard data={dashboardData} title="Report Tracker" />
+      <CountsCard
+        data={dashboardData}
+        onClick={onclick}
+        title="Report Tracker"
+      />
       <div className="bg-white p-4 rounded-lg space-y-6">
         <h1 className="text-2xl font-bold mb-6">Job Postings</h1>
         <DynamicFilterForm
@@ -196,6 +215,18 @@ function Page() {
             </button>
           </div>
         )}
+        <div>
+          <SheetModal
+            onOpenChange={onOpenChange}
+            isSheetOpen={isModalOpen}
+            title="Details"
+            className="w-full lg:max-w-3xl"
+          >
+            <div className="px-6 bg-gray-100 h-full overflow-y-scroll pb-10">
+              <JobPostingDetail selectedItem={selectedItem} />
+            </div>
+          </SheetModal>
+        </div>
       </div>
     </div>
   );

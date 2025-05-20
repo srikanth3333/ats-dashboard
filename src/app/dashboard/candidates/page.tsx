@@ -33,6 +33,14 @@ function Page() {
     },
   ];
 
+  const listFiltersUser = [
+    {
+      column: "assign",
+      operator: "eq",
+      value: user?.userProfile?.id,
+    },
+  ];
+
   const countCards = [
     {
       title: "Offered",
@@ -72,13 +80,14 @@ function Page() {
     dashboardData,
     loading: countsLoading,
     error: countsError,
+    fetchCounts,
   } = useCountCard(countCards, filters);
   const { data: assignJobPost } = useList(
     "job_posting",
-    "id, role",
+    "id, role, assign!inner(*)",
     "role",
     "id",
-    listFilters
+    !checkUser ? listFilters : listFiltersUser
   );
   const onOpenChange = () => {
     setIsModalOpen(!isModalOpen);
@@ -286,6 +295,7 @@ function Page() {
       });
       if (result?.success) {
         loadData(1);
+        fetchCounts();
         setCurrentPage(1);
         onOpenChange();
         toast("Candidate submitted successfully!");

@@ -1,22 +1,8 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import {
-  Bell,
-  Briefcase,
-  Building,
-  Calendar,
-  MapPin,
-  Share2,
-  User,
-} from "lucide-react";
-import { useState } from "react";
+import { Bell, Share2 } from "lucide-react";
+import Timer from "./Timer";
 
 interface CandidateData {
   id: string;
@@ -47,141 +33,19 @@ export default function CandidateInterviewGrid({
 }: {
   data: CandidateData[];
 }) {
-  const [openSheet, setOpenSheet] = useState(false);
-
   return (
     <div>
       {/* Selected candidate card */}
       <div className="space-y-5">
         {data?.map((record) => (
-          <CandidateCard
-            key={record?.id}
-            candidate={record}
-            setOpenSheet={setOpenSheet}
-          />
+          <CandidateCard key={record?.id} candidate={record} />
         ))}
       </div>
-
-      {/* Detailed info sheet */}
-      <Sheet open={openSheet} onOpenChange={setOpenSheet}>
-        <SheetContent className="lg:w-[700px] lg:w-[500px] max-h-screen overflow-y-auto p-6">
-          <SheetHeader>
-            <SheetTitle className="text-2xl">Job Posting Details</SheetTitle>
-          </SheetHeader>
-
-          {data?.map((job, index) => (
-            <div key={index} className="mt-6 space-y-4 border-b pb-6">
-              <div className="flex items-center gap-3">
-                <User className="h-5 w-5 text-gray-500" />
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Posted By</p>
-                  <p className="text-sm text-gray-500">
-                    {job.user_profile?.name} ({job.user_profile?.role})
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <Briefcase className="h-5 w-5 text-gray-500" />
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Role</p>
-                  <p className="text-sm text-gray-500">{job.role}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <Building className="h-5 w-5 text-gray-500" />
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Client</p>
-                  <p className="text-sm text-gray-500">
-                    {job.client?.name} ({job.client?.contract_type})
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <Calendar className="h-5 w-5 text-gray-500" />
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Posted On</p>
-                  <p className="text-sm text-gray-500">
-                    {new Date(job.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <p className="text-sm font-medium text-gray-700">Experience</p>
-                <p className="text-sm text-gray-500">
-                  {job.exp_min}-{job.exp_max} years
-                </p>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <p className="text-sm font-medium text-gray-700">Budget</p>
-                <p className="text-sm text-gray-500">
-                  ₹{job.budget_min}k - ₹{job.budget_max}k
-                </p>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <MapPin className="h-5 w-5 text-gray-500" />
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Locations</p>
-                  <p className="text-sm text-gray-500">
-                    {job.location.join(", ")}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <p className="text-sm font-medium text-gray-700">Skills</p>
-                <p className="text-sm text-gray-500">{job.skills.join(", ")}</p>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <p className="text-sm font-medium text-gray-700">Mode</p>
-                <p className="text-sm text-gray-500 capitalize">
-                  {job.mode_of_job}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <p className="text-sm font-medium text-gray-700">
-                  Employment Type
-                </p>
-                <p className="text-sm text-gray-500 capitalize">
-                  {job.employment_type}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <p className="text-sm font-medium text-gray-700">Job Status</p>
-                <Badge variant="outline" className="capitalize">
-                  {job.job_status}
-                </Badge>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </p>
-                <p className="text-sm text-gray-500">{job.job_description}</p>
-              </div>
-            </div>
-          ))}
-        </SheetContent>
-      </Sheet>
     </div>
   );
 }
 
-function CandidateCard({
-  candidate,
-  setOpenSheet,
-}: {
-  candidate: any;
-  setOpenSheet: (open: boolean) => void;
-}) {
+function CandidateCard({ candidate }: { candidate: any }) {
   const {
     user_profile,
     exp_min,
@@ -200,13 +64,15 @@ function CandidateCard({
   const role = candidate.role || position;
   const company = client?.name || "N/A";
   const locations = location.join(", ");
-
+  console.log(candidate?.date_of_posting);
   return (
     <Card className="w-full bg-white shadow-md hover:shadow-xl rounded-2xl transition-all duration-300 border border-gray-200">
       <CardContent className="px-6 space-y-4">
         <div className="flex justify-between items-start">
           <div>
-            <h3 className="font-bold text-xl text-gray-900">{company}</h3>
+            <div className="flex">
+              <h3 className="font-bold text-xl text-gray-900">{company}</h3>
+            </div>
             <p className="text-sm text-gray-600">{role}</p>
           </div>
           <div className="flex gap-2">
@@ -248,47 +114,35 @@ function CandidateCard({
           <Badge variant="default">{client?.contract_type}</Badge>
         </div>
 
-        <div className="flex flex-wrap justify-between items-center gap-5">
-          <div
-            onClick={() => setOpenSheet(true)}
-            className="bg-primary cursor-pointer hover:shadow-none flex items-center justify-center py-2 text-white shadow-xl font-semibold text-base px-2 flex-1 rounded-full"
-          >
+        {/* <div className="flex flex-wrap justify-between items-center gap-5">
+          <div className="bg-primary cursor-pointer hover:shadow-none flex items-center justify-center py-2 text-white shadow-xl font-semibold text-base px-2 flex-1 rounded-full">
             <span className="mr-2 text-xl font-bold">12</span>Assigned
           </div>
-          <div
-            onClick={() => setOpenSheet(true)}
-            className="bg-gray-400 cursor-pointer hover:shadow-none flex items-center justify-center py-2 text-white shadow-xl font-semibold text-base px-2 flex-1 rounded-full"
-          >
+          <div className="bg-gray-400 cursor-pointer hover:shadow-none flex items-center justify-center py-2 text-white shadow-xl font-semibold text-base px-2 flex-1 rounded-full">
             <span className="mr-2 text-xl font-bold">12</span>Reviewed
           </div>
-          <div
-            onClick={() => setOpenSheet(true)}
-            className="bg-gray-400 cursor-pointer hover:shadow-none flex items-center justify-center py-2 text-white shadow-xl font-semibold text-base px-2 flex-1 rounded-full"
-          >
+          <div className="bg-gray-400 cursor-pointer hover:shadow-none flex items-center justify-center py-2 text-white shadow-xl font-semibold text-base px-2 flex-1 rounded-full">
             <span className="mr-2 text-xl font-bold">12</span>Offered
           </div>
-          <div
-            onClick={() => setOpenSheet(true)}
-            className="bg-gray-400 cursor-pointer hover:shadow-none flex items-center justify-center py-2 text-white shadow-xl font-semibold text-base px-2 flex-1 rounded-full"
-          >
+          <div className="bg-gray-400 cursor-pointer hover:shadow-none flex items-center justify-center py-2 text-white shadow-xl font-semibold text-base px-2 flex-1 rounded-full">
             <span className="mr-2 text-xl font-bold">12</span>New
           </div>
-        </div>
+        </div> */}
 
         <div className="pt-4 border-t flex justify-between items-center">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 flex-3">
             <span className="text-gray-600 font-bold">JD:</span>{" "}
-            {job_description?.slice(0, 300)}{" "}
+            {job_description?.slice(0, 150)}{" "}
             <span className="text-link underline text-blue-900 font-medium">
               Read More
             </span>
           </p>
-          <Button
-            className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 py-1"
-            onClick={() => setOpenSheet(true)}
-          >
-            View Details
-          </Button>
+          <div className="flex-1">
+            <Timer
+              fromDateTime={candidate?.date_of_posting}
+              hours={candidate?.timer}
+            />
+          </div>
         </div>
       </CardContent>
     </Card>

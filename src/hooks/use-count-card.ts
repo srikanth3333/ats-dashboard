@@ -16,85 +16,97 @@ export function useCountCard(countCards: any[], filters: any) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchCounts() {
-      if (countCards.length === 0) {
-        setError("No count cards provided");
-        return;
-      }
+  async function fetchCounts() {
+    if (countCards.length === 0) {
+      setError("No count cards provided");
+      return;
+    }
+    setError(null);
 
-      // setLoading(true);
-      setError(null);
+    try {
+      const counts = await Promise.all(
+        countCards.map(
+          ({
+            tableName,
+            profileId,
+            assignId,
+            applyUserIdFilter,
+            applyCurrentUser,
+            filters: cardFilters,
+          }) => {
+            const effectiveProfileId = profileId;
+            const effectiveAssignId = assignId;
 
-      try {
-        // Fetch counts for all cards
-        const counts = await Promise.all(
-          countCards.map(
-            ({
+            if (!effectiveProfileId || !effectiveAssignId) {
+              throw new Error(`Missing profileId or assignId for ${tableName}`);
+            }
+
+            let mergedFilters: Record<string, any> = { ...cardFilters };
+
+            if (filters && filters.created_at) {
+              const dateValue =
+                typeof filters.created_at === "string"
+                  ? new Date(filters.created_at)
+                  : filters.created_at;
+
+              const start = startOfDay(dateValue);
+              mergedFilters.created_at = {
+                operator: "gte",
+                value: formatISO(start),
+              };
+            }
+
+            return fetchTableDataTotalCount({
               tableName,
-              profileId,
-              assignId,
+              profileId: effectiveProfileId,
+              assignId: effectiveAssignId,
               applyUserIdFilter,
               applyCurrentUser,
-              filters: cardFilters,
-            }) => {
-              const effectiveProfileId = profileId;
-              const effectiveAssignId = assignId;
-
-              if (!effectiveProfileId || !effectiveAssignId) {
-                throw new Error(
-                  `Missing profileId or assignId for ${tableName}`
-                );
-              }
-
-              let mergedFilters: Record<string, any> = { ...cardFilters };
-
-              if (filters && filters.created_at) {
-                const dateValue =
-                  typeof filters.created_at === "string"
-                    ? new Date(filters.created_at)
-                    : filters.created_at;
-
-                const start = startOfDay(dateValue);
-                mergedFilters.created_at = {
-                  operator: "gte",
-                  value: formatISO(start),
-                };
-              }
-
-              return fetchTableDataTotalCount({
-                tableName,
-                profileId: effectiveProfileId,
-                assignId: effectiveAssignId,
-                applyUserIdFilter,
-                applyCurrentUser,
-                filters: mergedFilters,
-              });
-            }
-          )
-        );
-
-        const data: DashboardData[] = countCards.map(
-          ({ title, color }, index) => ({
+              filters: mergedFilters,
+            });
+          }
+        )
+      );
+      const data: DashboardData[] = countCards.map(
+        (
+          {
             title,
-            value: counts[index],
-            percentChange: 0,
-            trend: "0",
             color,
-          })
-        );
+            tableName,
+            profileId,
+            assignId,
+            applyUserIdFilter,
+            applyCurrentUser,
+            filters,
+          },
+          index
+        ) => ({
+          title,
+          value: counts[index],
+          percentChange: 0,
+          trend: "0",
+          color,
+          tableName,
+          profileId,
+          assignId,
+          applyUserIdFilter,
+          applyCurrentUser,
+          filters,
+        })
+      );
 
-        setDashboardData(data);
-      } catch (err) {
-        console.error("Error fetching count card data:", err);
-        setError("Failed to load count card data. Please try again.");
-      } finally {
-        setLoading(false);
-      }
+      setDashboardData(data);
+    } catch (err) {
+      console.error("Error fetching count card data:", err);
+      setError("Failed to load count card data. Please try again.");
+    } finally {
+      setLoading(false);
     }
+  }
 
+  useEffect(() => {
     fetchCounts();
   }, [countCards?.length]);
 
-  return { dashboardData, loading, error };
+  return { dashboardData, loading, error, fetchCounts };
 }

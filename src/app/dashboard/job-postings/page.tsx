@@ -62,6 +62,7 @@ function Page() {
     dashboardData,
     loading: countsLoading,
     error: countsError,
+    fetchCounts,
   } = useCountCard(countCards, filters);
 
   const onOpenChange = () => {
@@ -265,6 +266,23 @@ function Page() {
       colSpan: "col-span-12 lg:col-span-6",
     },
     {
+      type: "combobox" as "combobox",
+      name: "timer",
+      label: "Timer (In hours)",
+      options: [
+        { label: "1 Hour", value: "1" },
+        { label: "2 Hour", value: "2" },
+        { label: "3 Hour", value: "3" },
+        { label: "4 Hour", value: "4" },
+        { label: "5 Hour", value: "5" },
+        { label: "6 Hour", value: "6" },
+        { label: "7 Hour", value: "7" },
+        { label: "8 Hour", value: "8" },
+      ],
+      required: true,
+      colSpan: "col-span-12 lg:col-span-6",
+    },
+    {
       type: "textarea" as "textarea",
       name: "job_description",
       label: "Job Description",
@@ -302,11 +320,11 @@ function Page() {
         ...values,
         status: "new",
         company_id: user?.userProfile?.company_id,
-        timer: new Date(),
       });
 
       if (result?.success) {
         loadData(1);
+        fetchCounts();
         setCurrentPage(1);
         onOpenChange();
         toast("Job Posting submitted successfully!");
@@ -344,7 +362,6 @@ function Page() {
       </div>
     );
   }
-
 
   return (
     <div>

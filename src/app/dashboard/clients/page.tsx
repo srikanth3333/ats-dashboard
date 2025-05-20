@@ -36,6 +36,7 @@ function page() {
     dashboardData,
     loading: countsLoading,
     error: countsError,
+    fetchCounts,
   } = useCountCard(countCards, {});
 
   const {
@@ -114,6 +115,7 @@ function page() {
       });
       if (result?.success) {
         loadData(1);
+        fetchCounts();
         setCurrentPage(1);
         toast("Client submitted successfully!");
         onOpenChange();

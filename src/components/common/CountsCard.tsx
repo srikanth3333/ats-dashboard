@@ -6,14 +6,23 @@ interface StatsCardProps {
   percentChange: number;
   trend: string;
   color: "purple" | "yellow" | "orange";
+  onClick?: (val: any) => void;
+  tableName: string;
+  profileId: string;
+  assignId: string;
+  applyUserIdFilter: boolean;
+  applyCurrentUser: boolean;
+  filters: any;
 }
 
 export default function CountsCard({
   title,
   data,
+  onClick,
 }: {
   title: string;
   data: any;
+  onClick?: (val: any) => void;
 }) {
   return (
     <div className="w-full">
@@ -26,6 +35,13 @@ export default function CountsCard({
             percentChange={record?.percentChange}
             trend={record?.trend}
             color={record?.color}
+            tableName={record?.tableName}
+            onClick={onClick}
+            profileId={record?.profileId}
+            assignId={record?.assignId}
+            applyUserIdFilter={record?.applyUserIdFilter}
+            applyCurrentUser={record?.applyCurrentUser}
+            filters={record?.filters}
           />
         ))}
       </div>
@@ -39,6 +55,13 @@ function StatsCard({
   percentChange,
   trend,
   color,
+  tableName,
+  profileId,
+  assignId,
+  applyUserIdFilter,
+  applyCurrentUser,
+  onClick,
+  filters,
 }: StatsCardProps) {
   const textColorMap = {
     purple: "text-purple-600",
@@ -46,7 +69,21 @@ function StatsCard({
     orange: "text-orange-500",
   };
   return (
-    <Card className="shadow-sm py-4">
+    <Card
+      className="shadow-sm py-4 cursor-pointer"
+      onClick={() => {
+        if (onClick) {
+          onClick({
+            tableName,
+            profileId,
+            assignId,
+            applyUserIdFilter,
+            applyCurrentUser,
+            filters,
+          });
+        }
+      }}
+    >
       <CardContent className="px-6">
         <div className="flex justify-between items-start">
           <div>

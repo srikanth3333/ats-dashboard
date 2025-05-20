@@ -109,14 +109,14 @@ const createFormSchema = (inputs: InputType[]) => {
 
     switch (input.type) {
       case "text":
-        if (input.label.toLowerCase() === "email") {
+        if (input.name.toLowerCase() === "email") {
           const emailSchema = z
             .string()
             .email({
               message: input.errorMsg || "Please enter a valid email address",
             })
             .max(100, {
-              message: `${input.label} must be less than 100 characters`,
+              message: `${input.name} must be less than 100 characters`,
             })
             .trim();
 
@@ -144,7 +144,7 @@ const createFormSchema = (inputs: InputType[]) => {
       case "textarea":
         let textareaSchema = z
           .string()
-          .max(500, {
+          .max(20000, {
             message: `${input.label} must be less than 500 characters`,
           })
           .trim();
