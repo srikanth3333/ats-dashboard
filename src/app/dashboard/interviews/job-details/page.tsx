@@ -31,10 +31,6 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 // Initialize Open AI client
-const openai = new OpenAI({
-  apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true,
-});
 
 // Validation schema using Zod
 const formSchema = z.object({
@@ -110,6 +106,10 @@ function Page() {
     if (!jobDescription) return;
     setIsLoadingDefaults(true);
     try {
+      const openai = new OpenAI({
+        apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
+        dangerouslyAllowBrowser: true,
+      });
       const prompt = `
                     Analyze the following job description and extract the following details in JSON format with the specified structure:
 
