@@ -1,10 +1,12 @@
 import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
+import { unstable_noStore } from "next/cache";
 
 export const dynamic = "force-dynamic";
-// export const maxDuration = 30;
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
+  unstable_noStore();
   const { messages, role, name, skills } = await req.json();
 
   const systemPrompt = {
