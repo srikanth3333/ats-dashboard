@@ -123,3 +123,11 @@
     font-style: normal;
   }
 }
+
+.hide-scrollbar {
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important;  /* Internet Explorer 10+ */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none !important; /* Safari and Chrome */
+}

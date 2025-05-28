@@ -1,6 +1,5 @@
 "use client";
 
-import { createClient } from "@/utils/supabase/client";
 import {
   createContext,
   ReactNode,
@@ -40,30 +39,30 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  useEffect(() => {
-    let subscription: { unsubscribe: () => void } | null = null;
+  // useEffect(() => {
+  //   let subscription: { unsubscribe: () => void } | null = null;
 
-    const setupAuthListener = async () => {
-      const supabase = await createClient();
-      const {
-        data: { subscription: authSubscription },
-      } = supabase.auth.onAuthStateChange((event, session) => {
-        if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
-          getUser();
-        }
-      });
-      subscription = authSubscription;
-      getUser();
-    };
+  //   const setupAuthListener = async () => {
+  //     const supabase = await createClient();
+  //     const {
+  //       data: { subscription: authSubscription },
+  //     } = supabase.auth.onAuthStateChange((event, session) => {
+  //       if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+  //         getUser();
+  //       }
+  //     });
+  //     subscription = authSubscription;
+  //     getUser();
+  //   };
 
-    setupAuthListener();
+  //   setupAuthListener();
 
-    return () => {
-      if (subscription) {
-        subscription.unsubscribe();
-      }
-    };
-  }, []);
+  //   return () => {
+  //     if (subscription) {
+  //       subscription.unsubscribe();
+  //     }
+  //   };
+  // }, []);
 
   useEffect(() => {
     getUser();

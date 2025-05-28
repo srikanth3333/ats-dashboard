@@ -19,6 +19,7 @@ interface ModalProps {
   isOpen?: boolean; // Controlled open state
   onOpenChange?: (open: boolean) => void; // Callback for open state changes
   className?: string; // Additional classes for the modal content
+  showClose?: boolean;
 }
 
 export function Modal({
@@ -28,6 +29,7 @@ export function Modal({
   isOpen,
   onOpenChange,
   className,
+  showClose = true,
 }: ModalProps) {
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === "Escape" && onOpenChange) {
@@ -43,6 +45,9 @@ export function Modal({
           "sm:max-w-[425px] lg:max-w-[725px] [&>button]:hidden bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 p-6 rounded-lg shadow-lg",
           className
         )}
+        onInteractOutside={(e) => {
+          e.preventDefault();
+        }}
         onKeyDown={handleKeyDown}
       >
         {(title || onOpenChange) && (
@@ -52,7 +57,7 @@ export function Modal({
                 {title}
               </DialogTitle>
             )}
-            {onOpenChange && (
+            {onOpenChange && !showClose && (
               <Button
                 variant="ghost"
                 size="sm"

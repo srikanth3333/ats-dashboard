@@ -105,11 +105,11 @@ const Sidebar = ({ children }: LayoutProps) => {
     const findPage = navItems?.find(
       (record) => record?.href?.includes(pathname) && record?.view !== false
     );
-    if (!findPage) {
-      router.push("/dashboard");
-      setPage(0);
-      return;
-    }
+    // if (!findPage) {
+    //   router.push("/dashboard");
+    //   setPage(0);
+    //   return;
+    // }
     setPage(findPage ? findPage.index : 0);
   }, [pathname, router]);
 

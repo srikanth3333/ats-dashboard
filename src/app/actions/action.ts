@@ -456,7 +456,7 @@ export async function getListData<T>(
 export async function getListDataById<T>(
   dbName: string,
   selectItems: string,
-  id: string
+  id: string | number | undefined
 ) {
   try {
     const supabase = await createClient();
@@ -821,6 +821,37 @@ export async function currentUser() {
       success: false,
       data: null,
       error: error as Error, // Use generic Error type for safety
+    };
+  }
+}
+
+export async function uploadVideoBlob(
+  blob: Blob
+): Promise<{ url: string | null; error: string | null }> {
+  try {
+    const file = new File([blob], `recording-${Date.now()}.webm`, {
+      type: "video/webm",
+    });
+
+    const filePath = `recordings/${file.name}`;
+    const supabase = await createClient();
+    const { error: uploadError } = await supabase.storage
+      .from("videos") // Make sure the bucket is named "videos"
+      .upload(filePath, file, {
+        contentType: "video/webm",
+        upsert: false,
+      });
+
+    if (uploadError) {
+      return { url: null, error: uploadError.message };
+    }
+
+    const { data } = supabase.storage.from("videos").getPublicUrl(filePath);
+    return { url: data.publicUrl, error: null };
+  } catch (err: any) {
+    return {
+      url: null,
+      error: err.message || "Unexpected error during upload.",
     };
   }
 }

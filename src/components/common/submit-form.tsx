@@ -699,7 +699,7 @@ const AddOptionForm: React.FC<{ onAdd: (option: string) => void }> = ({
 };
 
 // File Upload Component with react-dropzone
-const FileUpload: React.FC<{
+export const FileUpload: React.FC<{
   onChange: (file: File | undefined) => void;
   value: File | undefined;
   disabled?: boolean;

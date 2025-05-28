@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/table";
 import { format } from "date-fns";
 import { Edit, Eye, Timer, Trash2 } from "lucide-react";
+import Link from "next/link";
 import React from "react";
 import { Badge } from "../ui/badge";
 import EmptyView from "./EmptyView";
@@ -100,6 +101,28 @@ const DataTable: React.FC<TableComponentProps> = ({
                 <div className="text-md font-medium flex gap-2 items-center">
                   <Timer /> {format(val, "dd MMM yyyy - hh:mm a")}
                 </div>
+              );
+            },
+          };
+        }
+
+        if (data.type === "link") {
+          return {
+            title: `${data.label}`,
+            dataIndex: `${data.name}`,
+            key: i,
+            width: 150,
+            textWrap: "word-break",
+            ellipsis: true,
+            sorter: (a: any, b: any) => a[data.name] - b[data.name],
+            render: (val: any) => {
+              console.log(val);
+              return (
+                <Link
+                  href={`/dashboard/interviews/response-detail?id=${val?.link}`}
+                >
+                  {val?.count}
+                </Link>
               );
             },
           };
