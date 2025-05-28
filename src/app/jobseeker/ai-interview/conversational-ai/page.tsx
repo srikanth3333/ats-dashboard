@@ -7,13 +7,13 @@ import {
 } from "@/app/actions/action";
 import { Modal } from "@/components/common/modal";
 import { Button } from "@/components/ui/button";
+import { useChat } from "@/hooks/use-chat";
 import { useSpeaker } from "@/hooks/use-speaker";
 import useCountdownTimer from "@/hooks/use-timer";
 import { useVideoRecorder } from "@/hooks/use-video-recorder";
 import { useVoiceDetectionWithNoiseSuppression } from "@/hooks/use-voice-detector";
 import { useWebcam } from "@/hooks/use-web-cam";
 import { createClient } from "@/utils/supabase/client";
-import { useChat } from "@ai-sdk/react";
 import { Camera, LogOut, Mic, Timer } from "lucide-react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -28,37 +28,6 @@ export default async function Page() {
       <Dictaphone />
     </Suspense>
   );
-}
-
-async function uploadVideoBlob(
-  blob: Blob
-): Promise<{ url: string | null; error: string | null }> {
-  try {
-    const file = new File([blob], `recording-${Date.now()}.webm`, {
-      type: "video/webm",
-    });
-
-    const filePath = `recordings/${file.name}`;
-    const supabase = await createClient();
-    const { error: uploadError } = await supabase.storage
-      .from("videos") // Make sure the bucket is named "videos"
-      .upload(filePath, file, {
-        contentType: "video/webm",
-        upsert: false,
-      });
-
-    if (uploadError) {
-      return { url: null, error: uploadError.message };
-    }
-
-    const { data } = supabase.storage.from("videos").getPublicUrl(filePath);
-    return { url: data.publicUrl, error: null };
-  } catch (err: any) {
-    return {
-      url: null,
-      error: err.message || "Unexpected error during upload.",
-    };
-  }
 }
 
 const Dictaphone = () => {
@@ -99,6 +68,37 @@ const Dictaphone = () => {
     },
   });
 
+  async function uploadVideoBlob(
+    blob: Blob
+  ): Promise<{ url: string | null; error: string | null }> {
+    try {
+      const file = new File([blob], `recording-${Date.now()}.webm`, {
+        type: "video/webm",
+      });
+
+      const filePath = `recordings/${file.name}`;
+      const supabase = await createClient();
+      const { error: uploadError } = await supabase.storage
+        .from("videos") // Make sure the bucket is named "videos"
+        .upload(filePath, file, {
+          contentType: "video/webm",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        return { url: null, error: uploadError.message };
+      }
+
+      const { data } = supabase.storage.from("videos").getPublicUrl(filePath);
+      return { url: data.publicUrl, error: null };
+    } catch (err: any) {
+      return {
+        url: null,
+        error: err.message || "Unexpected error during upload.",
+      };
+    }
+  }
+
   const fetchData = useCallback(async () => {
     if (!id) {
       setError("No job ID provided");
@@ -121,12 +121,40 @@ const Dictaphone = () => {
     }
   }, [id]);
 
+  function extractQuestionsAndAnswersAdvanced(messages: any[]): any[] {
+    const qaPairs: any[] = [];
+    const chronologicalMessages = [...messages].reverse();
+
+    let currentQuestion = "";
+
+    for (const message of chronologicalMessages) {
+      if (message.role === "assistant" && message.content.trim() !== "") {
+        // Store the question
+        currentQuestion = message.content.trim();
+      } else if (
+        message.role === "user" &&
+        message.content.trim() !== "" &&
+        currentQuestion !== ""
+      ) {
+        // Found an answer for the current question
+        qaPairs.push({
+          question: currentQuestion,
+          answer: message.content.trim(),
+        });
+        currentQuestion = ""; // Reset for next Q&A pair
+      }
+    }
+
+    return qaPairs;
+  }
+
   const callInterviewAnalysis = async (recordId: any) => {
     const apiUrl =
       "https://urrntgajwowrjxuyiiau.supabase.co/functions/v1/hello-world";
+    const daatArray = extractQuestionsAndAnswersAdvanced(messages);
     const payload = {
       name: "",
-      questionAnswerArray: interview,
+      questionAnswerArray: daatArray,
       id: recordId,
     };
 
@@ -177,7 +205,8 @@ const Dictaphone = () => {
     saveTriggeredRef.current = true;
     setHasTriggeredSave(true);
     setIsSaving(true);
-
+    const daatArray = extractQuestionsAndAnswersAdvanced(messages);
+    console.log("daatArray", daatArray);
     try {
       console.log("Starting save recording process...");
 
@@ -185,7 +214,7 @@ const Dictaphone = () => {
       const [uploadResult, recordResult] = await Promise.all([
         uploadVideoBlob(recordedBlob),
         createRecordWithoutUser("candidate_interview", {
-          interview_data: interview,
+          interview_data: daatArray,
           job_id: id,
           status: "completed",
         }),
@@ -248,7 +277,7 @@ const Dictaphone = () => {
         setIsOpen(false);
         startTimer();
         startWebcam();
-        handleSubmit(undefined, { allowEmptySubmit: true });
+        handleSubmit(undefined);
       }
     } catch (error) {
       console.error("Error starting interview:", error);
@@ -325,13 +354,13 @@ const Dictaphone = () => {
       setInput(transcript);
 
       // Add to interview data
-      const latestMessage = messages[messages.length - 1];
-      if (latestMessage?.role !== "user") {
-        setInterview((prev) => [
-          ...prev,
-          { question: latestMessage?.content || "", answer: transcript },
-        ]);
-      }
+      // const latestMessage = messages[messages.length - 1];
+      // if (latestMessage?.role !== "user") {
+      //   setInterview((prev) => [
+      //     ...prev,
+      //     { question: latestMessage?.content || "", answer: transcript },
+      //   ]);
+      // }
     }
   }, [
     noVoiceDetected,
@@ -343,10 +372,11 @@ const Dictaphone = () => {
     messages,
   ]);
 
+  console.log(messages);
   // Handle input submission
   useEffect(() => {
     if (input.trim() !== "" && !interviewEnded) {
-      handleSubmit(undefined, { allowEmptySubmit: false });
+      handleSubmit(undefined);
       resetTranscript();
     }
   }, [input, handleSubmit, resetTranscript, interviewEnded]);
@@ -496,19 +526,28 @@ const Dictaphone = () => {
                         ) : (
                           <span className="font-bold text-gray-900">AI</span>
                         )}
-                        {message.parts.map((part, i) => {
-                          if (part.type === "text") {
-                            return (
-                              <div
-                                key={`${message.id}-${i}`}
-                                className="mb-2 font-normal"
-                              >
-                                {part.text}
-                              </div>
-                            );
-                          }
-                          return null;
-                        })}
+                        {/* Handle both string content and parts array */}
+                        {typeof message.content === "string" ? (
+                          <div className="mb-2 font-normal">
+                            {message.content}
+                          </div>
+                        ) : Array.isArray(message.content) ? (
+                          (message.content as Array<any>).map(
+                            (part: any, i: any) => {
+                              if (part.type === "text") {
+                                return (
+                                  <div
+                                    key={`${message.id}-${i}`}
+                                    className="mb-2 font-normal"
+                                  >
+                                    {part.text}
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }
+                          )
+                        ) : null}
                       </div>
                     ))}
                     {transcript && (

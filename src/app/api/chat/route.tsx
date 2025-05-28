@@ -1,13 +1,10 @@
 import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
-import { unstable_noStore } from "next/cache";
 
-// export const dynamic = "force-dynamic";
 export const runtime = "edge";
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
-  unstable_noStore();
   const { messages, role, name, skills } = await req.json();
 
   const systemPrompt = {
@@ -17,7 +14,6 @@ export async function POST(req: Request) {
     )}. Start with a friendly greeting and follow-up questions should depend on the candidate's answers. End the interview with a polite goodbye when the time is almost up time.`,
   };
 
-  // Prepend system prompt if not already included
   const finalMessages = [systemPrompt, ...messages];
 
   const result = streamText({
@@ -31,5 +27,4 @@ export async function POST(req: Request) {
       Connection: "keep-alive",
     },
   });
-  // return await streamText({ messages });
 }

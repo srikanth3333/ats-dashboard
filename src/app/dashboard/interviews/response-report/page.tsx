@@ -3,6 +3,7 @@ import { getListDataById } from "@/app/actions/action";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { format } from "date-fns";
 import {
   ArrowLeft,
   Briefcase,
@@ -95,7 +96,10 @@ const HiringInterviewReport: React.FC<HiringInterviewReportProps> = ({
               <div>
                 <span className="font-medium">Interviewed on:</span>
                 <span className="ml-2 font-semibold text-gray-900">
-                  {data?.job?.create_at}
+                  {data?.created_at &&
+                  !isNaN(new Date(data.created_at).getTime())
+                    ? format(new Date(data.created_at), "dd/MM/yyyy")
+                    : "N/A"}
                 </span>
               </div>
               <div>
@@ -177,7 +181,7 @@ const CandidateSummaryStats: React.FC<any> = ({
     },
     {
       label: "Expected Joining Date",
-      value: expectedJoiningDate,
+      value: format(new Date(expectedJoiningDate), "dd/MM/yyyy"),
     },
   ];
 
@@ -638,7 +642,7 @@ const InterviewIntelligence: React.FC = () => {
           </Badge>
         </div>
 
-        <div className="flex gap-2 mb-3">
+        <div className="flex gap-2 mb-3 flex-wrap">
           {tabs.map((tab) => (
             <Button
               key={tab.id}
@@ -832,7 +836,7 @@ function page() {
       "*, job:job_id(*)",
       id
     );
-    console.log(result);
+    console.log(id);
     if (result?.error) {
       return;
     }
@@ -841,9 +845,9 @@ function page() {
 
   useEffect(() => {
     getData();
-  }, []);
+  }, [id]);
 
-  console.log("data", data?.video_url);
+  console.log("data", data);
   return (
     <div>
       <HiringInterviewReport data={data} />
