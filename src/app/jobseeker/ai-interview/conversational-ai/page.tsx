@@ -4,7 +4,6 @@ import {
   createRecordWithoutUser,
   getListDataById,
   updateRecord,
-  uploadVideoBlob,
 } from "@/app/actions/action";
 import { Modal } from "@/components/common/modal";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,7 @@ import useCountdownTimer from "@/hooks/use-timer";
 import { useVideoRecorder } from "@/hooks/use-video-recorder";
 import { useVoiceDetectionWithNoiseSuppression } from "@/hooks/use-voice-detector";
 import { useWebcam } from "@/hooks/use-web-cam";
+import { createClient } from "@/utils/supabase/client";
 import { useChat } from "@ai-sdk/react";
 import { Camera, LogOut, Mic, Timer } from "lucide-react";
 import Image from "next/image";
@@ -28,6 +28,37 @@ export default async function Page() {
       <Dictaphone />
     </Suspense>
   );
+}
+
+async function uploadVideoBlob(
+  blob: Blob
+): Promise<{ url: string | null; error: string | null }> {
+  try {
+    const file = new File([blob], `recording-${Date.now()}.webm`, {
+      type: "video/webm",
+    });
+
+    const filePath = `recordings/${file.name}`;
+    const supabase = await createClient();
+    const { error: uploadError } = await supabase.storage
+      .from("videos") // Make sure the bucket is named "videos"
+      .upload(filePath, file, {
+        contentType: "video/webm",
+        upsert: false,
+      });
+
+    if (uploadError) {
+      return { url: null, error: uploadError.message };
+    }
+
+    const { data } = supabase.storage.from("videos").getPublicUrl(filePath);
+    return { url: data.publicUrl, error: null };
+  } catch (err: any) {
+    return {
+      url: null,
+      error: err.message || "Unexpected error during upload.",
+    };
+  }
 }
 
 const Dictaphone = () => {
