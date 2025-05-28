@@ -283,7 +283,7 @@ const DataTable: React.FC<TableComponentProps> = ({
                 <span className="flex items-center text-md font-medium gap-2">
                   <span
                     className={`w-3 h-3 rounded-full ${
-                      val.toLowerCase() === "completed"
+                      val?.toLowerCase() === "completed"
                         ? "bg-green-500"
                         : "bg-gray-500"
                     }`}
