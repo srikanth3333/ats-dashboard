@@ -16,7 +16,7 @@ import {
   Video,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 
 interface JobSkill {
   name: string;
@@ -95,7 +95,15 @@ const typedGetListDataById = getListDataById as (
   id: string
 ) => Promise<ApiResponse>;
 
-export default function InterviewPage() {
+export default async function Page() {
+  return (
+    <Suspense>
+      <MyClientSideComponent />
+    </Suspense>
+  );
+}
+
+const MyClientSideComponent = () => {
   const searchParams = useSearchParams();
   const id = searchParams.get("interviewId");
   const router = useRouter();
@@ -454,4 +462,4 @@ export default function InterviewPage() {
       </div>
     </div>
   );
-}
+};

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 interface UseWebcamReturn {
   startWebcam: () => Promise<void>;
   stopWebcam: () => void;
-  videoRef: React.RefObject<HTMLVideoElement>;
+  videoRef: React.RefObject<HTMLVideoElement | null>;
   isStreaming: boolean;
   error: string | null;
 }
@@ -13,7 +13,7 @@ export const useWebcam = (): UseWebcamReturn => {
   const [isStreaming, setIsStreaming] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isClient, setIsClient] = useState<boolean>(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   // Ensure client-side execution

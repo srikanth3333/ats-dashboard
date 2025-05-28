@@ -12,9 +12,17 @@ import {
   Mic,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 
-export default function InterviewReadinessCheck() {
+export default async function Page() {
+  return (
+    <Suspense>
+      <MyClientSideComponent />
+    </Suspense>
+  );
+}
+
+const MyClientSideComponent = () => {
   const [cameraPermission, setCameraPermission] = useState<
     "pending" | "granted" | "denied"
   >("pending");
@@ -241,4 +249,4 @@ export default function InterviewReadinessCheck() {
       </div>
     </div>
   );
-}
+};

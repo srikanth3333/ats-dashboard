@@ -17,10 +17,18 @@ import { useChat } from "@ai-sdk/react";
 import { Camera, LogOut, Mic, Timer } from "lucide-react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
+
+export default async function Page() {
+  return (
+    <Suspense>
+      <Dictaphone />
+    </Suspense>
+  );
+}
 
 const Dictaphone = () => {
   const { formattedTime, isRunning, startTimer } = useCountdownTimer(1);
@@ -569,5 +577,3 @@ const Dictaphone = () => {
     </div>
   );
 };
-
-export default Dictaphone;

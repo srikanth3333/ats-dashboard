@@ -21,9 +21,17 @@ import {
 import { format } from "date-fns"; // Use date-fns for formatting
 import { CalendarIcon } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
-const JobApplicationPage: React.FC = () => {
+export default async function Page() {
+  return (
+    <Suspense>
+      <JobApplicationPage />
+    </Suspense>
+  );
+}
+
+const JobApplicationPage = () => {
   const searchParams = useSearchParams();
   const id = searchParams.get("interviewId");
   const jobId = searchParams.get("id");
@@ -365,5 +373,3 @@ const JobApplicationPage: React.FC = () => {
     </div>
   );
 };
-
-export default JobApplicationPage;
