@@ -2,7 +2,8 @@ import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
 import { unstable_noStore } from "next/cache";
 
-export const dynamic = "force-dynamic";
+// export const dynamic = "force-dynamic";
+export const runtime = "edge";
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
@@ -30,4 +31,5 @@ export async function POST(req: Request) {
       Connection: "keep-alive",
     },
   });
+  // return await streamText({ messages });
 }
