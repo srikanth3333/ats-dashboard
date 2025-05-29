@@ -1,7 +1,10 @@
 "use server";
 
-import { openai } from "@ai-sdk/openai";
-import { generateText } from "ai";
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 export async function generateInterviewResponse(
   messages: any[],
@@ -19,20 +22,22 @@ export async function generateInterviewResponse(
   const finalMessages = [systemPrompt, ...messages];
 
   try {
-    const result = await generateText({
-      model: openai("gpt-4o-mini"),
+    const result = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
       messages: finalMessages,
-      maxTokens: 1000,
+      max_tokens: 1000,
     });
+
+    const responseText = result.choices[0]?.message?.content || "";
 
     return {
       success: true,
-      text: result.text,
+      text: responseText,
       usage: result.usage
         ? {
-            promptTokens: result.usage.promptTokens,
-            completionTokens: result.usage.completionTokens,
-            totalTokens: result.usage.totalTokens,
+            promptTokens: result.usage.prompt_tokens,
+            completionTokens: result.usage.completion_tokens,
+            totalTokens: result.usage.total_tokens,
           }
         : null,
     };
