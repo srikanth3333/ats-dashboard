@@ -401,7 +401,7 @@ const Dictaphone = () => {
     }, 100);
 
     return () => clearTimeout(scrollTimeout);
-  }, [messages.length]);
+  }, [messages.length, transcript]);
 
   // Initial data fetch
   useEffect(() => {
@@ -541,20 +541,47 @@ const Dictaphone = () => {
 
             <div className="flex-1">
               <div className="bg-gray-100 bg-gradient-to-b from-black/10 to-white/70 p-2 rounded-lg h-[30vh] flex items-end overflow-hidden hide-scrollbar">
-                <div className="overflow-y-scroll h-[30vh] flex items-end rounded-lg py-5 px-2 hide-scrollbar">
-                  <div>
-                    {displayMessages?.map((message) => (
-                      <div key={message.id} className="whitespace-pre-wrap">
+                <div className="overflow-y-scroll h-[30vh] w-full rounded-lg py-5 px-2 hide-scrollbar">
+                  <div className="flex flex-col">
+                    {/* Display messages in original order (latest at bottom) */}
+                    {messages?.map((message) => (
+                      <div
+                        key={message.id}
+                        className="whitespace-pre-wrap mb-3"
+                      >
                         {message.role === "user" ? (
                           <span className="font-bold text-gray-900">You</span>
                         ) : (
                           <span className="font-bold text-gray-900">AI</span>
                         )}
-                        {renderMessageContent(message.content)}
+                        {/* Handle both string content and parts array */}
+                        {typeof message.content === "string" ? (
+                          <div className="mb-2 font-normal">
+                            {message.content}
+                          </div>
+                        ) : Array.isArray(message.content) ? (
+                          (message.content as Array<any>).map(
+                            (part: any, i: any) => {
+                              if (part.type === "text") {
+                                return (
+                                  <div
+                                    key={`${message.id}-${i}`}
+                                    className="mb-2 font-normal"
+                                  >
+                                    {part.text}
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }
+                          )
+                        ) : null}
                       </div>
                     ))}
-                    {transcript && !isProcessingVoice && (
-                      <div className="text-gray-800">
+
+                    {/* Show current transcript if available */}
+                    {transcript && (
+                      <div className="text-gray-800 mb-3">
                         <span className="font-bold text-gray-900">You</span>{" "}
                         <br />
                         <span className="text-blue-600 italic">
@@ -562,6 +589,8 @@ const Dictaphone = () => {
                         </span>
                       </div>
                     )}
+
+                    {/* This div will be scrolled to automatically */}
                     <div ref={bottomRef} />
                   </div>
                 </div>
