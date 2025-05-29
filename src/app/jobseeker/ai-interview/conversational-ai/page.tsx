@@ -142,12 +142,12 @@ const Dictaphone = () => {
     let currentQuestion = "";
 
     for (const message of chronologicalMessages) {
-      if (message.role === "assistant" && message.content.trim() !== "") {
+      if (message.role === "assistant") {
         currentQuestion = message.content.trim();
       } else if (
-        message.role === "user" &&
-        message.content.trim() !== "" &&
-        currentQuestion !== ""
+        message.role === "user"
+        // message.content.trim() !== "" &&
+        // currentQuestion !== ""
       ) {
         qaPairs.push({
           question: currentQuestion,
