@@ -128,6 +128,22 @@ const DataTable: React.FC<TableComponentProps> = ({
           };
         }
 
+        if (data.type === "interview_link") {
+          return {
+            title: `${data.label}`,
+            dataIndex: `${data.name}`,
+            key: i,
+            width: 150,
+            textWrap: "word-break",
+            ellipsis: true,
+            sorter: (a: any, b: any) => a[data.name] - b[data.name],
+            render: (val: any) => {
+              console.log(val);
+              return <Link href={val}>Join Interview</Link>;
+            },
+          };
+        }
+
         if (data.type === "foreignkey") {
           return {
             title: `${data.label}`,

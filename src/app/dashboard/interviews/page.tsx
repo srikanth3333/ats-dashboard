@@ -81,6 +81,7 @@ function Page() {
     { label: "Context", name: "job_skills", type: "array" },
     { label: "Expiry", name: "interview_expiry" },
     { label: "Responses", name: "interview_count", type: "link" },
+    { label: "Join Interview", name: "interview_url", type: "interview_link" },
   ];
 
   const filterFields = [
