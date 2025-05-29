@@ -108,7 +108,7 @@ function Page() {
     // router.push("/dashboard/interviews/new-assement");
   };
 
-  if (loading || isLoading) {
+  if (loading) {
     return (
       <div>
         <SkeletonCard
