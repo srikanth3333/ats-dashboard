@@ -17,7 +17,14 @@ import { createClient } from "@/utils/supabase/client";
 import { Camera, LogOut, Mic, Timer } from "lucide-react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
@@ -37,9 +44,8 @@ const Dictaphone = () => {
   const [isDataLoading, setIsDataLoading] = useState(false);
   const [interviewEnded, setInterviewEnded] = useState(false);
   const [isOpen, setIsOpen] = useState(true);
-  const [interview, setInterview] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
-  const [hasTriggeredSave, setHasTriggeredSave] = useState(false);
+  const [isProcessingVoice, setIsProcessingVoice] = useState(false);
 
   const searchParams = useSearchParams();
   const id = searchParams.get("interviewId");
@@ -50,6 +56,9 @@ const Dictaphone = () => {
   const avatarVideoRef = useRef<HTMLVideoElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const saveTriggeredRef = useRef(false);
+  const speechProcessingRef = useRef(false);
+  const lastTranscriptRef = useRef("");
+
   const { transcript, resetTranscript, browserSupportsSpeechRecognition } =
     useSpeechRecognition();
   const { startWebcam, videoRef } = useWebcam();
@@ -68,6 +77,11 @@ const Dictaphone = () => {
     },
   });
 
+  // Memoize reversed messages to prevent flickering
+  const displayMessages = useMemo(() => {
+    return [...messages].reverse();
+  }, [messages]);
+
   async function uploadVideoBlob(
     blob: Blob
   ): Promise<{ url: string | null; error: string | null }> {
@@ -79,7 +93,7 @@ const Dictaphone = () => {
       const filePath = `recordings/${file.name}`;
       const supabase = await createClient();
       const { error: uploadError } = await supabase.storage
-        .from("videos") // Make sure the bucket is named "videos"
+        .from("videos")
         .upload(filePath, file, {
           contentType: "video/webm",
           upsert: false,
@@ -129,19 +143,17 @@ const Dictaphone = () => {
 
     for (const message of chronologicalMessages) {
       if (message.role === "assistant" && message.content.trim() !== "") {
-        // Store the question
         currentQuestion = message.content.trim();
       } else if (
         message.role === "user" &&
         message.content.trim() !== "" &&
         currentQuestion !== ""
       ) {
-        // Found an answer for the current question
         qaPairs.push({
           question: currentQuestion,
           answer: message.content.trim(),
         });
-        currentQuestion = ""; // Reset for next Q&A pair
+        currentQuestion = "";
       }
     }
 
@@ -151,10 +163,10 @@ const Dictaphone = () => {
   const callInterviewAnalysis = async (recordId: any) => {
     const apiUrl =
       "https://urrntgajwowrjxuyiiau.supabase.co/functions/v1/hello-world";
-    const daatArray = extractQuestionsAndAnswersAdvanced(messages);
+    const dataArray = extractQuestionsAndAnswersAdvanced(messages);
     const payload = {
       name: "",
-      questionAnswerArray: daatArray,
+      questionAnswerArray: dataArray,
       id: recordId,
     };
 
@@ -183,45 +195,25 @@ const Dictaphone = () => {
   };
 
   const saveRecording = useCallback(async () => {
-    // Prevent multiple executions
-    if (
-      saveTriggeredRef.current ||
-      isSaving ||
-      !recordedBlob ||
-      !id ||
-      hasTriggeredSave
-    ) {
-      console.log("Save recording blocked:", {
-        alreadySaving: saveTriggeredRef.current,
-        isSaving,
-        hasBlob: !!recordedBlob,
-        hasId: !!id,
-        hasTriggeredSave,
-      });
+    if (saveTriggeredRef.current || isSaving || !recordedBlob || !id) {
       return;
     }
 
-    // Set flags to prevent re-execution
     saveTriggeredRef.current = true;
-    setHasTriggeredSave(true);
     setIsSaving(true);
-    const daatArray = extractQuestionsAndAnswersAdvanced(messages);
-    console.log("daatArray", daatArray);
+    const dataArray = extractQuestionsAndAnswersAdvanced(messages);
+
     try {
       console.log("Starting save recording process...");
 
-      // Create interview record and upload video in parallel
       const [uploadResult, recordResult] = await Promise.all([
         uploadVideoBlob(recordedBlob),
         createRecordWithoutUser("candidate_interview", {
-          interview_data: daatArray,
+          interview_data: dataArray,
           job_id: id,
           status: "completed",
         }),
       ]);
-
-      console.log("Upload result:", uploadResult);
-      console.log("Record result:", recordResult);
 
       if (
         !uploadResult?.url ||
@@ -231,30 +223,22 @@ const Dictaphone = () => {
         throw new Error("Failed to upload video or create record");
       }
 
-      // Update record with video URL
       const updateResult = await updateRecord(
         "candidate_interview",
         recordResult.data.id,
         { video_url: uploadResult.url }
       );
 
-      console.log("Update result:", updateResult);
-
       if (!updateResult?.success) {
         throw new Error("Failed to update record with video URL");
       }
 
-      // Call analysis API
       try {
-        const analysisResult = await callInterviewAnalysis(
-          recordResult.data.id
-        );
-        console.log("Analysis completed:", analysisResult);
+        await callInterviewAnalysis(recordResult.data.id);
       } catch (analysisError) {
         console.error("Analysis failed, but continuing:", analysisError);
       }
 
-      // Navigate to results page
       router.push(
         `/jobseeker/ai-interview/candidate-details?interviewId=${id}&id=${recordResult.data.id}`
       );
@@ -262,13 +246,11 @@ const Dictaphone = () => {
       console.error("Error saving recording:", error);
       setError("Failed to save interview. Please try again.");
       setInterviewEnded(false);
-      // Reset flags on error so user can retry
       saveTriggeredRef.current = false;
-      setHasTriggeredSave(false);
     } finally {
       setIsSaving(false);
     }
-  }, [recordedBlob, id, interview, isSaving, hasTriggeredSave, router]);
+  }, [recordedBlob, id, messages, router]);
 
   const startListening = async () => {
     try {
@@ -286,22 +268,53 @@ const Dictaphone = () => {
   };
 
   const endInterview = useCallback(() => {
-    // Prevent multiple calls
     if (interviewEnded || saveTriggeredRef.current) {
-      console.log("End interview blocked - already ended or saving");
       return;
     }
 
     console.log("Ending interview...");
-
-    // Stop all recording and listening
     SpeechRecognition.stopListening();
     stopRecording();
     stop();
-
-    // Set interview ended state
     setInterviewEnded(true);
   }, [stopRecording, stop, interviewEnded]);
+
+  // Process voice input with debouncing
+  const processVoiceInput = useCallback(async () => {
+    if (
+      speechProcessingRef.current ||
+      isProcessingVoice ||
+      !transcript.trim() ||
+      transcript === lastTranscriptRef.current ||
+      interviewEnded ||
+      !isRunning
+    ) {
+      return;
+    }
+
+    speechProcessingRef.current = true;
+    setIsProcessingVoice(true);
+    lastTranscriptRef.current = transcript;
+
+    try {
+      console.log("Processing voice input:", transcript);
+      SpeechRecognition.stopListening();
+      setInput(transcript);
+      resetTranscript();
+    } catch (error) {
+      console.error("Error processing voice input:", error);
+    } finally {
+      speechProcessingRef.current = false;
+      setIsProcessingVoice(false);
+    }
+  }, [
+    transcript,
+    setInput,
+    resetTranscript,
+    interviewEnded,
+    isRunning,
+    isProcessingVoice,
+  ]);
 
   // Handle timer end
   useEffect(() => {
@@ -311,7 +324,7 @@ const Dictaphone = () => {
     }
   }, [isRunning, isRecording, interviewEnded, endInterview]);
 
-  // Handle speech recognition and AI responses
+  // Handle speech recognition state
   useEffect(() => {
     if (isSpeaking) {
       SpeechRecognition.stopListening();
@@ -322,64 +335,48 @@ const Dictaphone = () => {
         avatarVideoRef.current.currentTime = 0;
       }
 
-      // Only restart listening if interview is active
-      if (!interviewEnded && isRunning && isRecording) {
-        SpeechRecognition.startListening({ continuous: true });
+      // Restart listening with delay to avoid conflicts
+      if (!interviewEnded && isRunning && isRecording && !isProcessingVoice) {
+        setTimeout(() => {
+          if (!isSpeaking && !interviewEnded && isRunning && isRecording) {
+            SpeechRecognition.startListening({ continuous: true });
+          }
+        }, 500);
       }
     }
-  }, [isSpeaking, interviewEnded, isRunning, isRecording]);
+  }, [isSpeaking, interviewEnded, isRunning, isRecording, isProcessingVoice]);
 
-  // Handle AI message responses
+  // Handle AI responses
   useEffect(() => {
     if (!isLoading && isRunning && !interviewEnded) {
       const latestMessage = messages[messages.length - 1];
-      if (latestMessage?.role !== "user" && latestMessage?.content) {
+      if (latestMessage?.role === "assistant" && latestMessage?.content) {
         speak(latestMessage.content);
       }
     }
   }, [messages, isLoading, isRunning, interviewEnded, speak]);
 
-  // Handle voice detection and transcript processing
+  // Handle voice detection with debouncing
   useEffect(() => {
-    if (
-      noVoiceDetected &&
-      transcript.trim() !== "" &&
-      isRunning &&
-      isRecording &&
-      !interviewEnded
-    ) {
-      console.log("Voice detected, processing transcript:", transcript);
+    if (noVoiceDetected && transcript.trim() !== "" && !isProcessingVoice) {
+      const timeoutId = setTimeout(() => {
+        processVoiceInput();
+      }, 1000); // 1 second delay to ensure complete sentence
 
-      SpeechRecognition.stopListening();
-      setInput(transcript);
-
-      // Add to interview data
-      // const latestMessage = messages[messages.length - 1];
-      // if (latestMessage?.role !== "user") {
-      //   setInterview((prev) => [
-      //     ...prev,
-      //     { question: latestMessage?.content || "", answer: transcript },
-      //   ]);
-      // }
+      return () => clearTimeout(timeoutId);
     }
-  }, [
-    noVoiceDetected,
-    transcript,
-    setInput,
-    isRunning,
-    isRecording,
-    interviewEnded,
-    messages,
-  ]);
+  }, [noVoiceDetected, transcript, processVoiceInput, isProcessingVoice]);
 
-  console.log(messages);
   // Handle input submission
   useEffect(() => {
-    if (input.trim() !== "" && !interviewEnded) {
-      handleSubmit(undefined);
-      resetTranscript();
+    if (input.trim() !== "" && !interviewEnded && !isLoading) {
+      const submitTimeout = setTimeout(() => {
+        handleSubmit(undefined);
+      }, 100);
+
+      return () => clearTimeout(submitTimeout);
     }
-  }, [input, handleSubmit, resetTranscript, interviewEnded]);
+  }, [input, handleSubmit, interviewEnded, isLoading]);
 
   // Handle interview end and saving
   useEffect(() => {
@@ -387,23 +384,50 @@ const Dictaphone = () => {
       interviewEnded &&
       !isSpeaking &&
       !isSaving &&
-      !hasTriggeredSave &&
       !saveTriggeredRef.current
     ) {
-      console.log("Interview ended, triggering save recording...");
-      saveRecording();
-    }
-  }, [interviewEnded, isSpeaking, isSaving, hasTriggeredSave, saveRecording]);
+      const saveTimeout = setTimeout(() => {
+        saveRecording();
+      }, 1000);
 
-  // Auto-scroll to bottom
+      return () => clearTimeout(saveTimeout);
+    }
+  }, [interviewEnded, isSpeaking, isSaving, saveRecording]);
+
+  // Auto-scroll to bottom with throttling
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, transcript]);
+    const scrollTimeout = setTimeout(() => {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+
+    return () => clearTimeout(scrollTimeout);
+  }, [messages.length]);
 
   // Initial data fetch
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const renderMessageContent = useCallback((content: any) => {
+    if (typeof content === "string") {
+      return <div className="mb-2 font-normal">{content}</div>;
+    }
+
+    if (Array.isArray(content)) {
+      return content.map((part: any, i: number) => {
+        if (part.type === "text") {
+          return (
+            <div key={i} className="mb-2 font-normal">
+              {part.text}
+            </div>
+          );
+        }
+        return null;
+      });
+    }
+
+    return null;
+  }, []);
 
   if (!browserSupportsSpeechRecognition) {
     return (
@@ -519,42 +543,23 @@ const Dictaphone = () => {
               <div className="bg-gray-100 bg-gradient-to-b from-black/10 to-white/70 p-2 rounded-lg h-[30vh] flex items-end overflow-hidden hide-scrollbar">
                 <div className="overflow-y-scroll h-[30vh] flex items-end rounded-lg py-5 px-2 hide-scrollbar">
                   <div>
-                    {messages?.reverse()?.map((message) => (
+                    {displayMessages?.map((message) => (
                       <div key={message.id} className="whitespace-pre-wrap">
                         {message.role === "user" ? (
                           <span className="font-bold text-gray-900">You</span>
                         ) : (
                           <span className="font-bold text-gray-900">AI</span>
                         )}
-                        {/* Handle both string content and parts array */}
-                        {typeof message.content === "string" ? (
-                          <div className="mb-2 font-normal">
-                            {message.content}
-                          </div>
-                        ) : Array.isArray(message.content) ? (
-                          (message.content as Array<any>).map(
-                            (part: any, i: any) => {
-                              if (part.type === "text") {
-                                return (
-                                  <div
-                                    key={`${message.id}-${i}`}
-                                    className="mb-2 font-normal"
-                                  >
-                                    {part.text}
-                                  </div>
-                                );
-                              }
-                              return null;
-                            }
-                          )
-                        ) : null}
+                        {renderMessageContent(message.content)}
                       </div>
                     ))}
-                    {transcript && (
+                    {transcript && !isProcessingVoice && (
                       <div className="text-gray-800">
                         <span className="font-bold text-gray-900">You</span>{" "}
                         <br />
-                        {transcript}
+                        <span className="text-blue-600 italic">
+                          {transcript}
+                        </span>
                       </div>
                     )}
                     <div ref={bottomRef} />
@@ -585,12 +590,16 @@ const Dictaphone = () => {
               <LogOut className="text-red-500" />
             </button>
             <div
-              className={`p-2 border border-3 rounded-full border-gray-400 ${isSpeaking ? "bg-green-50" : ""}`}
+              className={`p-2 border border-3 rounded-full border-gray-400 ${
+                isSpeaking ? "bg-green-50" : ""
+              }`}
             >
               <Mic className="text-green-500" />
             </div>
             <div
-              className={`p-2 border border-3 rounded-full border-gray-400 ${isRecording ? "bg-green-50" : ""}`}
+              className={`p-2 border border-3 rounded-full border-gray-400 ${
+                isRecording ? "bg-green-50" : ""
+              }`}
             >
               <Camera className="text-green-500" />
             </div>
@@ -628,7 +637,7 @@ const Dictaphone = () => {
       <Modal
         isOpen={interviewEnded}
         className="w-[500px]"
-        onOpenChange={() => {}} // Prevent manual closing
+        onOpenChange={() => {}}
         title="Interview Completed"
       >
         <div className="text-center">
