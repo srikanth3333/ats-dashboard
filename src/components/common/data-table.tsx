@@ -411,14 +411,14 @@ const DataTable: React.FC<TableComponentProps> = ({
               return (
                 <span
                   className={`px-3 py-1 rounded-full  text-md font-medium flex items-center justify-center gap-2 ${
-                    val.toLowerCase() === "rejected"
+                    val?.toLowerCase() === "rejected"
                       ? "bg-red-100 text-red-600"
                       : "bg-green-100 text-green-600"
                   }`}
                 >
                   <span
                     className={`w-2 h-2  rounded-full ${
-                      val.toLowerCase() === "rejected"
+                      val?.toLowerCase() === "rejected"
                         ? "bg-red-500"
                         : "bg-green-500"
                     }`}
