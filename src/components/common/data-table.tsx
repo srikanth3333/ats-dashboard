@@ -138,8 +138,7 @@ const DataTable: React.FC<TableComponentProps> = ({
             ellipsis: true,
             sorter: (a: any, b: any) => a[data.name] - b[data.name],
             render: (val: any) => {
-              console.log(val);
-              return <Link href={val}>Join Interview</Link>;
+              return val ?? <Link href={val ? val : ""}>Join Interview</Link>;
             },
           };
         }
